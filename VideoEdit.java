@@ -15,18 +15,6 @@ import java.util.List;
 public class VideoEdit {
 
     public static final String ffmpegPath = "/usr/local/Cellar/ffmpeg/4.1.3_1/bin/ffmpeg";
-//    public static String videoPath = "videos";
-
-    /**read video slices that will be merged from file */
-    public static VideoSlice[] readVideoSlice(String infoPath){
-        In in = new In(infoPath);
-        int numOfSlices = in.readInt();
-        VideoSlice[] slices = new VideoSlice[numOfSlices];
-        for(int i = 0;i < numOfSlices; i++){
-            slices[i] = new VideoSlice(in.readString(),in.readString(),in.readString());
-        }
-        return slices;
-    }
 
     /**convert java code into ffmpeg command
      * $ ffmpeg -i input.mp4 -i out_merged.mp4 -i input.mp4 -filter_complex \
@@ -34,13 +22,14 @@ public class VideoEdit {
      * [1:v]trim=9:15,setpts=PTS-STARTPTS[1v];[1:a]atrim=9:15,asetpts=PTS-STARTPTS[1a];\
      * [2:v]trim=30:40,setpts=PTS-STARTPTS[2v];[2:a]atrim=30:40,asetpts=PTS-STARTPTS[2a];\
      * [0v][0a][1v][1a][2v][2a]concat=n=3:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" outtest0.mp4 */
-    public static List<String> convertor(VideoSlice[] videoSlices, String outVideoName){
+    public static List<String> convertor(List<ClipProcess.TargetClip> videoSlices, String videoName, String outVideoName){
         List<String> command = new ArrayList<>();
-        int len = videoSlices.length;
+        int len = videoSlices.size();
         command.add(ffmpegPath);
+        command.add("-y"); // if there exist the same file, replace it without warning
         for(int i = 0; i < len; i++){
             command.add("-i");
-            command.add(videoSlices[i].getFilename());
+            command.add(videoName);
         }
         command.add("-filter_complex");
 
@@ -50,17 +39,17 @@ public class VideoEdit {
             sb.append("[");
             sb.append(i);
             sb.append(":v]trim=");
-            sb.append(videoSlices[i].getStarttime());
+            sb.append(videoSlices.get(i).getStartTimeBySecond());
             sb.append(":");
-            sb.append(videoSlices[i].getEndtime());
+            sb.append(videoSlices.get(i).getEndTimeBySecond());
             sb.append(",setpts=PTS-STARTPTS[");
             sb.append(i);
             sb.append("v];[");
             sb.append(i);
             sb.append(":a]atrim=");
-            sb.append(videoSlices[i].getStarttime());
+            sb.append(videoSlices.get(i).getStartTimeBySecond());
             sb.append(":");
-            sb.append(videoSlices[i].getEndtime());
+            sb.append(videoSlices.get(i).getEndTimeBySecond());
             sb.append(",asetpts=PTS-STARTPTS[");
             sb.append(i);
             sb.append("a];");
@@ -88,14 +77,12 @@ public class VideoEdit {
     }
 
 
-    public void generateVideo(String infoPath, String inputFolderPath,String outVideoName){
+    public void generateVideo(List<ClipProcess.TargetClip> targetClips, String inputFolderPath, String videoName, String outVideoName){
 
         VideoEdit videoEdit = new VideoEdit();
-        VideoSlice[] vs = videoEdit.readVideoSlice(infoPath);
-        List<String> comm = videoEdit.convertor(vs,outVideoName);
+        List<String> comm = videoEdit.convertor(targetClips,videoName,outVideoName);
         ProcessBuilder processBuilder = new ProcessBuilder();
         //processBuilder.directory(new File("/usr/local/Cellar/ffmpeg/4.1.3_1/bin"));
-        //processBuilder.command("ffplay", "../../../../../../Users/olive/Documents/Coding/VideoSlice/ffmpeg/input.mp4");
         processBuilder.directory(new File(inputFolderPath));
 
         processBuilder.command(comm);
@@ -118,8 +105,4 @@ public class VideoEdit {
             e.printStackTrace();
         }
     }
-
-
-
-
 }

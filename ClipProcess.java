@@ -6,15 +6,22 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ClipProcess {
-    public static class VideoClip{
-        String startTime; // eg:00:00:22
-        String endTime;
-        public VideoClip(String startTime,String endTime){
+    public static class TargetClip {
+        private String startTime; // eg:00:00:22
+        private String endTime;
+        public int getStartTimeBySecond(){
+            return stringToSeconds(startTime);
+        }
+        public int getEndTimeBySecond(){
+            return stringToSeconds(endTime);
+        }
+        public TargetClip(String startTime, String endTime){
             this.startTime = startTime;
             this.endTime = endTime;
         }
-        public String toString(){
-            return String.format("startTime: %s , endTime: %s",startTime,endTime);
+        private int stringToSeconds(String s){
+            String[] time = s.split(":");
+            return Integer.parseInt(time[0]) * 3600 + Integer.parseInt(time[1]) * 60 + Integer.parseInt(time[2]);
         }
     }
 
@@ -30,20 +37,12 @@ public class ClipProcess {
             this.endTime = endTime;
             this.content = content;
         }
-        public String toString(){
-            return String.format("seq: %d , startTime: %s , endTime: %s , content: %s",seq,startTime,endTime,content);
-        }
     }
 
-    public static List<VideoClip> getTargetClip(String clipFilePath){
+    public static List<TargetClip> getTargetClip(String clipFilePath){
         String content = readFile(clipFilePath);
-        //System.out.println(content);
         List<SourceVideoClip> listSourceClips = parseSubtitleContent(content);
-//        System.out.println(listSourceClips);
-//        System.out.println(listSourceClips.size());
-        List<VideoClip> listTargetClips = transferSource(listSourceClips);
-        System.out.println(listTargetClips);
-        return listTargetClips;
+        return transferSource(listSourceClips);
     }
 
     private static String readFile(String filePath){
@@ -55,7 +54,7 @@ public class ClipProcess {
     }
     private static List<SourceVideoClip> parseSubtitleContent(String content){
         List<SourceVideoClip> resListClip = new LinkedList<>();
-        String[] lists = content.split("\\n\\n");
+        String[] lists = content.split("\\n\\n"); // select each subtitle by new line
         for(String clip : lists){
             String[] lines = clip.split("\\n");
             if(lines.length != 3){
@@ -64,15 +63,16 @@ public class ClipProcess {
             int seq = Integer.valueOf(lines[0]);
             String sourceTimes = lines[1];
             String subtitle = lines[2];
-            String[] clipTime = sourceTimes.split("-->");
+            String[] clipTime = sourceTimes.split("-->");  // parse time : 00:00:22,957 --> 00:00:26,308
             String startClipTime = clipTime[0].split(",")[0].trim();
             String endClipTime = clipTime[1].split(",")[0].trim();
             resListClip.add(new SourceVideoClip(seq,startClipTime,endClipTime,subtitle));
         }
         return resListClip;
     }
-    private static List<VideoClip> transferSource(List<SourceVideoClip> listClips){
-        List<VideoClip> resVideoClip = new LinkedList<>();
+
+    private static List<TargetClip> transferSource(List<SourceVideoClip> listClips){
+        List<TargetClip> resTargetClip = new LinkedList<>();
         int startSeq = listClips.get(0).seq;
         String startTime = listClips.get(0).startTime;
         for(int i = 1; i < listClips.size();i++){
@@ -80,20 +80,14 @@ public class ClipProcess {
             if(startSeq == currSeq-1){
                 startSeq = currSeq;
             }else{
-                resVideoClip.add(new VideoClip(startTime,listClips.get(i-1).endTime));
+                resTargetClip.add(new TargetClip(startTime,listClips.get(i-1).endTime));
                 startTime = listClips.get(i).startTime;
                 startSeq = listClips.get(i).seq;
             }
         }
-        resVideoClip.add(new VideoClip(startTime,listClips.get(listClips.size()-1).endTime));
-        return resVideoClip;
+        // don't forget the last clip
+        resTargetClip.add(new TargetClip(startTime,listClips.get(listClips.size()-1).endTime));
+        return resTargetClip;
     }
 
-    public static void main(String[] args) {
-        String clipFilePath = "/Users/olive/Documents/GitHub/Projects/Video/res/cut.txt";
-        getTargetClip(clipFilePath);
-        List<VideoClip> expectClip= new LinkedList<>();
-        expectClip.add(new VideoClip("00:00:22","00:00:36"));
-        expectClip.add(new VideoClip("00:00:55","00:01:09"));
-    }
 }
