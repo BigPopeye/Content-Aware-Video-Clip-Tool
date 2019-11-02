@@ -6,10 +6,12 @@ You don't need to watch and browse tons of videos, you just need to select the t
 
 
 Finished Versions:
-
-- [x] v.1.2: Read target subtitle clips file and clip them from video.
-- [x] v.1.1: Clip and merge videos by reading specific text file which including the target video fragments time duration.
+- [x] v 1.3: Global search subtitles using Lucene.
+- [x] v 1.2: Read target subtitle clips file and clip them from video.
+- [x] v 1.1: Clip and merge videos by reading specific text file which including the target video fragments time duration.
 - [x] v 1.0: Clip and merge videos using ffmpeg and commend line.
 
 
 ToDo:
+- [ ] Play videos online using streaming media service
+ 

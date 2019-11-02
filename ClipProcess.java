@@ -57,7 +57,7 @@ public class ClipProcess {
         String[] lists = content.split("\\n\\n"); // select each subtitle by new line
         for(String clip : lists){
             String[] lines = clip.split("\\n");
-            if(lines.length != 3){
+            if(lines.length >4){
                 throw new RuntimeException("Invalid clip format"+clip);
             }
             int seq = Integer.valueOf(lines[0]);
